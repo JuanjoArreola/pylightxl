@@ -232,9 +232,12 @@ def readxl_get_workbook(fn):
         except KeyError:
             # the output of openpyxl can sometimes not write the schema for "r" relationship
             rId = tag_sheet.get('id')
-        sheetId = int(re.sub('[^0-9]', '', rId))
-        wbrels = readxl_get_workbookxmlrels(fn)
-        rv['ws'][name] = {'ws': name, 'rId': rId, 'order': sheetId, 'fn_ws': wbrels[rId]}
+        try:
+            sheetId = int(re.sub('[^0-9]', '', rId))
+            wbrels = readxl_get_workbookxmlrels(fn)
+            rv['ws'][name] = {'ws': name, 'rId': rId, 'order': sheetId, 'fn_ws': wbrels[rId]}
+        except ValueError:
+            continue
 
     for tag_sheet in root.findall('./default:definedNames/default:definedName', ns):
         name = tag_sheet.get('name')
@@ -243,10 +246,6 @@ def readxl_get_workbook(fn):
         try:
             ws, address = fulladdress.split('!')
         except ValueError:
-            msg = ('pylightxl - Ill formatted workbook.xml. '
-                   'Skipping NamedRange not containing sheet reference (ex: "Sheet1!A1"): '
-                   '{name} - {fulladdress}'.format(name=name, fulladdress=fulladdress))
-            warnings.warn(msg, UserWarning)
             continue
 
         rv['nr'][name] = {'nr': name, 'ws': ws, 'address': address}
